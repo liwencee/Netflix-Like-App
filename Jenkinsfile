@@ -1,5 +1,6 @@
 tools {
-    sonarQube 'sonar-scanner' // must match what you named it in Global Tool Config
+    jdk 'jdk11'
+    sonarQube 'sonar-scanner'
 }
 stage('Sonarqube Analysis') {
     steps {
