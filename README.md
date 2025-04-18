@@ -49,7 +49,7 @@
 - Clone your application's code repository onto the EC2 instance:
     
     ```bash
-    git clone https://github.com/N4si/DevSecOps-Project.git
+    git clone https://github.com/liwencee/Netflix-Like-App.git
     ```
     
 
@@ -61,7 +61,7 @@
     
     sudo apt-get update
     sudo apt-get install docker.io -y
-    sudo usermod -aG docker $USER  # Replace with your system's username, e.g., 'ubuntu'
+    sudo usermod -aG docker $ubuntu  # Replace with your system's username, e.g., 'ubuntu'
     newgrp docker
     sudo chmod 777 /var/run/docker.sock
     ```
@@ -73,7 +73,7 @@
     docker run -d --name netflix -p 8081:80 netflix:latest
     
     #to delete
-    docker stop <containerid>
+    docker stop  
     docker rmi -f netflix
     ```
 
@@ -91,7 +91,7 @@ It will show an error cause you need API key
 
 Now recreate the Docker image with your api key:
 ```
-docker build --build-arg TMDB_V3_API_KEY=<your-api-key> -t netflix .
+docker build --build-arg TMDB_V3_API_KEY=3822e28d8c381c9ce9feedea48bbfc19 -t netflix .
 ```
 
 **Phase 2: Security**
@@ -286,84 +286,6 @@ Certainly, here are the instructions without step numbers:
   - Click "OK" to save your DockerHub credentials.
 
 Now, you have installed the Dependency-Check plugin, configured the tool, and added Docker-related plugins along with your DockerHub credentials in Jenkins. You can now proceed with configuring your Jenkins pipeline to include these tools and credentials in your CI/CD process.
-
-```groovy
-
-pipeline{
-    agent any
-    tools{
-        jdk 'jdk17'
-        nodejs 'node16'
-    }
-    environment {
-        SCANNER_HOME=tool 'sonar-scanner'
-    }
-    stages {
-        stage('clean workspace'){
-            steps{
-                cleanWs()
-            }
-        }
-        stage('Checkout from Git'){
-            steps{
-                git branch: 'main', url: 'https://github.com/N4si/DevSecOps-Project.git'
-            }
-        }
-        stage("Sonarqube Analysis "){
-            steps{
-                withSonarQubeEnv('sonar-server') {
-                    sh ''' $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=Netflix \
-                    -Dsonar.projectKey=Netflix '''
-                }
-            }
-        }
-        stage("quality gate"){
-           steps {
-                script {
-                    waitForQualityGate abortPipeline: false, credentialsId: 'Sonar-token' 
-                }
-            } 
-        }
-        stage('Install Dependencies') {
-            steps {
-                sh "npm install"
-            }
-        }
-        stage('OWASP FS SCAN') {
-            steps {
-                dependencyCheck additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit', odcInstallation: 'DP-Check'
-                dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
-            }
-        }
-        stage('TRIVY FS SCAN') {
-            steps {
-                sh "trivy fs . > trivyfs.txt"
-            }
-        }
-        stage("Docker Build & Push"){
-            steps{
-                script{
-                   withDockerRegistry(credentialsId: 'docker', toolName: 'docker'){   
-                       sh "docker build --build-arg TMDB_V3_API_KEY=<yourapikey> -t netflix ."
-                       sh "docker tag netflix nasi101/netflix:latest "
-                       sh "docker push nasi101/netflix:latest "
-                    }
-                }
-            }
-        }
-        stage("TRIVY"){
-            steps{
-                sh "trivy image nasi101/netflix:latest > trivyimage.txt" 
-            }
-        }
-        stage('Deploy to container'){
-            steps{
-                sh 'docker run -d --name netflix -p 8081:80 nasi101/netflix:latest'
-            }
-        }
-    }
-}
-
 
 If you get docker login failed errorr
 
